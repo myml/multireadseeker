@@ -11,6 +11,7 @@ import (
 	_ "github.com/dvyukov/go-fuzz/go-fuzz-dep"
 )
 
+// 将bytes拆分成多个Opener，用于测试
 func fuzzBytesToMultiOpener(data []byte, size int) []Opener {
 	if len(data) == 0 {
 		return []Opener{}
@@ -44,6 +45,7 @@ func fuzzBytesToMultiOpener(data []byte, size int) []Opener {
 	return os
 }
 
+// 将bytes拆分成多个ReadSeekCloser，用于测试
 func fuzzBytesToMultiReader(data []byte, size int) []io.ReadSeekCloser {
 	if len(data) == 0 {
 		return []io.ReadSeekCloser{}
@@ -73,6 +75,8 @@ func fuzzBytesToMultiReader(data []byte, size int) []io.ReadSeekCloser {
 	return rs
 }
 
+// 模糊测试，使用go-fuzz
+// 使用方式：cd app/api/utils/repository/multi_read_seeker; go-fuzz-build;  go-fuzz -bin gofuzzdep-fuzz.zip -workdir ./full_output
 func Fuzz(data []byte) int {
 	{
 		rs := fuzzBytesToMultiReader(data, 0)

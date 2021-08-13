@@ -5,8 +5,8 @@ import (
 	"io"
 )
 
-var _ io.ReadSeekCloser = new(multiReadSeeker)
-
+// 文件流虚拟连接
+// 将多个文件流合并为一个流，并提供Read、Seek、Close接口
 type multiReadSeeker struct {
 	childen []*multiReadSeekerChild
 	index   int
@@ -14,11 +14,13 @@ type multiReadSeeker struct {
 	offset  int64
 }
 
+// 单个文件流，附带流的大小
 type multiReadSeekerChild struct {
 	size int64
 	io.ReadSeekCloser
 }
 
+// 流读取，如果分片读取到末尾，则自动切换到下一个分片
 func (mrs *multiReadSeeker) Read(p []byte) (int, error) {
 	if mrs.index >= len(mrs.childen) {
 		return 0, io.EOF
@@ -44,6 +46,7 @@ func (mrs *multiReadSeeker) Read(p []byte) (int, error) {
 	return n, nil
 }
 
+// 流跳转，计算出跳转的位置，并设置分片索引
 func (mrs *multiReadSeeker) Seek(offset int64, whence int) (int64, error) {
 	switch whence {
 	case io.SeekStart:

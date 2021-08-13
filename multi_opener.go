@@ -5,26 +5,28 @@ import (
 	"io"
 )
 
+// Opener的内部封装，加上流的长度
 type opener struct {
 	Opener
 	size int64
 }
 
 // NewMultiOpener 合并多个Opener接口为一个，将文件切片虚拟的合并
-func NewMultiOpener(os ...Opener) (Opener, error) {
+func NewMultiOpener(list ...Opener) (Opener, error) {
 	mo := multiOpener{}
 	// 获取所有文件的大小，并进行记录
-	for i := range os {
-		size, err := openerSize(os[i])
+	for i := range list {
+		size, err := openerSize(list[i])
 		if err != nil {
 			return nil, err
 		}
 		mo.size += size
-		mo.childen = append(mo.childen, opener{Opener: os[i], size: size})
+		mo.childen = append(mo.childen, opener{Opener: list[i], size: size})
 	}
 	return &mo, nil
 }
 
+// 实现Opener接口，用于实例化multiOpenerReader
 type multiOpener struct {
 	childen []opener
 	size    int64
@@ -43,6 +45,8 @@ func (mo *multiOpener) Open() (io.ReadSeekCloser, error) {
 	return &multiOpenerReader{childen: mo.childen, curren: first, size: mo.size}, nil
 }
 
+// 文件切片虚拟连接
+// 将多个文件切片合并为一个文件，并提供Read、Seek、Close接口
 type multiOpenerReader struct {
 	childen []opener
 	curren  io.ReadSeekCloser
@@ -124,6 +128,7 @@ func (mor *multiOpenerReader) Seek(offset int64, whence int) (int64, error) {
 	return mor.offset, nil
 }
 
+// 关闭当前分片流
 func (mor *multiOpenerReader) Close() error {
 	if mor.curren == nil {
 		return nil

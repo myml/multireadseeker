@@ -27,9 +27,9 @@ func bytesToMultiOpener(data []byte, size int) []Opener {
 			size = 1
 		}
 	}
-	var os []Opener
+	var mo []Opener
 	for i := 0; i < len(data); i += size {
-		os = append(os, func(i int) Opener {
+		mo = append(mo, func(i int) Opener {
 			return OpenFunc(func() (io.ReadSeekCloser, error) {
 				var rsc struct {
 					*bytes.Reader
@@ -46,7 +46,7 @@ func bytesToMultiOpener(data []byte, size int) []Opener {
 			})
 		}(i))
 	}
-	return os
+	return mo
 }
 
 func TestMultiOpenerRead(t *testing.T) {
@@ -55,8 +55,8 @@ func TestMultiOpenerRead(t *testing.T) {
 		a := make([]byte, size)
 		_, err := io.ReadFull(rand.Reader, a)
 		assert.NoError(err)
-		os := bytesToMultiOpener(a, 0)
-		f, err := NewMultiOpener(os...)
+		mo := bytesToMultiOpener(a, 0)
+		f, err := NewMultiOpener(mo...)
 		r, err := f.Open()
 		assert.NoError(err)
 		b, err := io.ReadAll(r)
@@ -72,8 +72,8 @@ func TestMultiOpenerSeek(t *testing.T) {
 	_, err := io.ReadFull(rand.Reader, a[:])
 	assert.NoError(err)
 	rawR := bytes.NewReader(a[:])
-	os := bytesToMultiOpener(a[:], 0)
-	f, err := NewMultiOpener(os...)
+	mo := bytesToMultiOpener(a[:], 0)
+	f, err := NewMultiOpener(mo...)
 	assert.NoError(err)
 	r, err := f.Open()
 	assert.NoError(err)
@@ -116,8 +116,8 @@ func BenchmarkMultiOpenerRead(b *testing.B) {
 			a := make([]byte, countSize*1024)
 			_, err := io.ReadFull(rand.Reader, a)
 			assert.NoError(err)
-			os := bytesToMultiOpener(a, chunkSize)
-			f, err := NewMultiOpener(os...)
+			mo := bytesToMultiOpener(a, chunkSize)
+			f, err := NewMultiOpener(mo...)
 			assert.NoError(err)
 			r, err := f.Open()
 			assert.NoError(err)
